@@ -32,14 +32,15 @@
                 <div class="pull-left">
                     <div class="form-group form-inline">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-default" title="新建" data-toggle="modal" data-target="#editModal"><i class="fa fa-file-o"></i> 新建</button>
-                            <button type="button" class="btn btn-default" title="删除"><i class="fa fa-trash-o"></i> 删除</button>
-                            <button type="button" class="btn btn-default" title="刷新" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+                            <button type="button" class="btn btn-default" title="新建" data-toggle="modal" data-target="#editModal" @click="tbBrand={}"><i class="fa fa-file-o"></i> 新建</button>
+                            <button type="button" class="btn btn-default" title="删除" @click="deleteBrand()"><i class="fa fa-trash-o"></i> 删除</button>
+                            <button type="button" class="btn btn-default" title="刷新" onclick="window.location.reload();" @click="getBrandPageList()"><i class="fa fa-refresh"></i> 刷新</button>
                         </div>
                     </div>
                 </div>
                 <div class="box-tools pull-right">
                     <div class="has-feedback">
+                        品牌名称：<input type="text" v-model='searchEntity.name'>品牌首字符：<input type="text" v-model='searchEntity.firstChar'><button type="button" class="btn btn-default" @click='getBrandPageList()'>查询</button>
                     </div>
                 </div>
                 <!--工具栏/-->
@@ -58,12 +59,12 @@
                     </thead>
                     <tbody>
                         <tr v-for="(item,index) in brandList">
-                            <td><input type="checkbox"></td>
-                            <td>{{index+1}}</td>
+                            <td><input type="checkbox" @click="selectBrand($event,item.id)"></td>
+                            <td>{{item.id}}</td>
                             <td>{{item.name}}</td>
                             <td>{{item.firstChar}}</td>
                             <td class="text-center">
-                                <button type="button" class="btn bg-olive btn-xs" data-toggle="modal" data-target="#editModal">修改</button>
+                                <button type="button" class="btn bg-olive btn-xs" data-toggle="modal" data-target="#editModal" @click='findOneBrand(item.id)'>修改</button>
                             </td>
                         </tr>
                     </tbody>
@@ -111,17 +112,24 @@ var app = new Vue({
         url: {
             list: '../brand/findAll.do',
             listPage: '../brand/findBrandByPage.do',
-            saveOrUpdate:'../brand/saveOrUpdate.do'
+            saveOrUpdate: '../brand/saveOrUpdate.do',
+            findOneBrand: '../brand/findOneBrand.do',
+            deleteBrand: '../brand/deleteBrand.do'
         },
         brandList: [],
         pageNum: 1,
         pageSize: 10,
         total: 0,
-        tbBrand:{
-            id:"",
-            name:"",
-            firstChar:""
-        }
+        tbBrand: {
+            id: "",
+            name: "",
+            firstChar: ""
+        },
+        searchEntity: {
+            name: "",
+            firstChar: ""
+        },
+        selectIds: []
     },
     mounted() {
         this.getBrandPageList();
@@ -134,35 +142,71 @@ var app = new Vue({
         },
 
         getBrandPageList() {
-            this.$http.post(this.url.listPage, { pageNum: this.pageNum, pageSize: this.pageSize }, { emulateJSON: true }).then(res => {
+            this.$http.post(this.url.listPage, { pageNum: this.pageNum, pageSize: this.pageSize,searchEntity:this.searchEntity }, { emulateJSON: false }).then(res => {
                 this.brandList = res.body.rows;
                 this.total = res.body.total;
             });
         },
         handleSizeChange(val) {
-            this.pageSize=val;
+            this.pageSize = val;
             this.getBrandPageList();
         },
         handleCurrentChange(val) {
-            this.pageNum=val;
+            this.pageNum = val;
             this.getBrandPageList();
         },
-        saveOrUpdate(){
-            this.$http.post(this.url.saveOrUpdate,this.tbBrand,{ emulateJSON: true }).then(res=>{
-                if(res.body.success){
+        saveOrUpdate() {
+            this.$http.post(this.url.saveOrUpdate, this.tbBrand, { emulateJSON: true }).then(res => {
+                if (res.body.success) {
                     this.$message({
                         message: res.body.message,
                         type: 'success'
                     });
-                    
+                    this.tbBrand = {};
                     this.getBrandPageList();
-                }else{
+                } else {
                     this.$message({
                         message: res.body.message,
                         type: 'error'
                     });
                 }
             });
+        },
+        findOneBrand(id) {
+            this.$http.get(this.url.findOneBrand, { params: { id: id } }).then(res => {
+                this.tbBrand = res.body;
+            });
+        },
+        selectBrand($event, id) {
+            if ($event.target.checked) {
+                this.selectIds.push(id);
+            } else {
+                this.selectIds.splice(this.selectIds.indexOf(id), 1);
+            }
+        },
+        deleteBrand() {
+            if (this.selectIds.length > 0) {
+                this.$http.post(this.url.deleteBrand, { ids: this.selectIds }, { emulateJSON: true }).then(res => {
+                    if (res.body.success) {
+                        this.$message({
+                            message: res.body.message,
+                            type: 'success'
+                        });
+                        this.selectIds = [];
+                        this.getBrandPageList();
+                    } else {
+                        this.$message({
+                            message: res.body.message,
+                            type: 'error'
+                        });
+                    }
+                });
+            } else {
+                this.$message({
+                    message: "请至少选择一个品牌进行删除！",
+                    type: 'error'
+                });
+            }
         }
     }
 });
