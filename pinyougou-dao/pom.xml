@@ -23,6 +23,10 @@
 			<groupId>com.github.miemiedev</groupId>
 			<artifactId>mybatis-paginator</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.github.pagehelper</groupId>
+			<artifactId>pagehelper</artifactId>
+		</dependency>
 		<!-- mybatis通用mapper组件 -->
 		<dependency>
 			<groupId>tk.mybatis</groupId>

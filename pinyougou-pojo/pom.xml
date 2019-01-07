@@ -12,8 +12,8 @@
 	<dependencies>
 		<!-- mybatis通用mapper组件 -->
 		<dependency>
-	<groupId>tk.mybatis</groupId>
-	<artifactId>mapper</artifactId>
-</dependency>
+			<groupId>tk.mybatis</groupId>
+			<artifactId>mapper</artifactId>
+		</dependency>
 	</dependencies>
 </project>
