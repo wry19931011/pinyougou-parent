@@ -13,8 +13,11 @@
     <script src="../plugins/jQuery/jquery-2.2.3.min.js"></script>
     <script src="../plugins/bootstrap/js/bootstrap.min.js"></script>
     <script src="../plugins/vue/vue.js"></script>
-     <script src="../plugins/vue/vue-resource.js"></script>
-</head>
+    <script src="../plugins/vue/vue-resource.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 
 <body class="hold-transition skin-red sidebar-mini">
     <div id="brand">
@@ -67,7 +70,9 @@
                 </table>
                 <!--数据列表/-->
             </div>
-            <!-- 数据表格 /-->
+            <!-- 分頁/-->
+            <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pageNum" :page-sizes="[10, 20, 30]" :page-size="pageSize" layout="total, sizes, prev, pager, next, jumper" :total="total">
+            </el-pagination>
         </div>
         <!-- /.box-body -->
         <!-- 编辑窗口 -->
@@ -82,16 +87,16 @@
                         <table class="table table-bordered table-striped" width="800px">
                             <tr>
                                 <td>品牌名称</td>
-                                <td><input class="form-control" placeholder="品牌名称"> </td>
+                                <td><input class="form-control" placeholder="品牌名称" v-model="tbBrand.name"> </td>
                             </tr>
                             <tr>
                                 <td>首字母</td>
-                                <td><input class="form-control" placeholder="首字母"> </td>
+                                <td><input class="form-control" placeholder="首字母" v-model="tbBrand.firstChar"> </td>
                             </tr>
                         </table>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-success" data-dismiss="modal" aria-hidden="true">保存</button>
+                        <button class="btn btn-success" data-dismiss="modal" aria-hidden="true" @click="saveOrUpdate">保存</button>
                         <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</button>
                     </div>
                 </div>
@@ -103,21 +108,62 @@
 var app = new Vue({
     el: '#brand',
     data: {
-    	url:{
-    		list:'../brand/findAll.do'
-    	},
-       brandList:[]
+        url: {
+            list: '../brand/findAll.do',
+            listPage: '../brand/findBrandByPage.do',
+            saveOrUpdate:'../brand/saveOrUpdate.do'
+        },
+        brandList: [],
+        pageNum: 1,
+        pageSize: 10,
+        total: 0,
+        tbBrand:{
+            id:"",
+            name:"",
+            firstChar:""
+        }
     },
-    mounted(){
-    	this.getBrandList();
+    mounted() {
+        this.getBrandPageList();
     },
-    methods:{
-    	getBrandList:function(){
-    		this.$http.post(this.url.list,{},{ emulateJSON: true }).then(res=>{
-    			this.brandList=res.body;
-    		});
-    	}
+    methods: {
+        getBrandList() {
+            this.$http.post(this.url.list, {}, { emulateJSON: true }).then(res => {
+                this.brandList = res.body;
+            });
+        },
+
+        getBrandPageList() {
+            this.$http.post(this.url.listPage, { pageNum: this.pageNum, pageSize: this.pageSize }, { emulateJSON: true }).then(res => {
+                this.brandList = res.body.rows;
+                this.total = res.body.total;
+            });
+        },
+        handleSizeChange(val) {
+            this.pageSize=val;
+            this.getBrandPageList();
+        },
+        handleCurrentChange(val) {
+            this.pageNum=val;
+            this.getBrandPageList();
+        },
+        saveOrUpdate(){
+            this.$http.post(this.url.saveOrUpdate,this.tbBrand,{ emulateJSON: true }).then(res=>{
+                if(res.body.success){
+                    this.$message({
+                        message: res.body.message,
+                        type: 'success'
+                    });
+                    this.getBrandPageList();
+                }else{
+                    this.$message({
+                        message: res.body.message,
+                        type: 'error'
+                    });
+                }
+            });
+        }
     }
-})
+});
 </script>
 </html>
